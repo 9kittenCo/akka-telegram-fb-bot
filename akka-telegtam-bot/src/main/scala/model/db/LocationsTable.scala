@@ -4,10 +4,6 @@ import model._
 import slick.jdbc.H2Profile.api._
 
 class LocationsTable(tag: Tag) extends BaseTable[Location](tag, "location_info") {
-//  def id= column[Long]("id", O.PrimaryKey, O.AutoInc)
-  lazy implicit val pagesTableQ : TableQuery[PagesTable] = TableQuery[PagesTable]
-
-//  def pageId = column[Long]("pageId")
   def city = column[String]("city")
   def country = column[String]("country")
   def latitude = column[String]("latitude")

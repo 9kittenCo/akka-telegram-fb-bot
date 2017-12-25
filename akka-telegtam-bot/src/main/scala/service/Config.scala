@@ -10,6 +10,7 @@ trait Config {
   val httpPort: Int = httpConfig.getInt("port")
 
   private lazy val facebookConfig = config.getConfig("api.facebook")
+  lazy val fbServiceUrl: String = facebookConfig.getString("serviceUrl")
   lazy val fbAccessToken: String = facebookConfig.getString("appToken")
 
   val databaseUrl: String = databaseConfig.getString("url")
