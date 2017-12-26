@@ -1,5 +1,6 @@
 CREATE TABLE location_info (
   "id"       SERIAL PRIMARY KEY,
+  "fb_id" VARCHAR,
   "city" VARCHAR NOT NULL,
   "country" VARCHAR NOT NULL,
   "latitude" VARCHAR NOT NULL,
@@ -12,6 +13,7 @@ CREATE TABLE page_info (
   "id"       SERIAL PRIMARY KEY,
   "name" VARCHAR NOT NULL,
   "location_id" INTEGER,
+  "location_fb_id" VARCHAR,
   "phone" VARCHAR NOT NULL,
   "price_range" VARCHAR NOT NULL,
   "created_at" TIMESTAMP NOT NULL  );

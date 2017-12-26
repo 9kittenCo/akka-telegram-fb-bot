@@ -21,7 +21,7 @@ libraryDependencies ++= {
 
     "com.typesafe.akka"  %% "akka-http"                   % Version.akkaHttp,
     "com.typesafe.akka"  %% "akka-http-core"              % Version.akkaHttp,
-    "com.typesafe.akka"  %% "akka-http-spray-json"        % Version.akkaHttp,
+//    "com.typesafe.akka"  %% "akka-http-spray-json"        % Version.akkaHttp,
     "com.typesafe.akka"  %% "akka-http-testkit"           % Version.akkaHttp % Test,
 
     "com.typesafe.slick" %% "slick"                       % Version.slick,

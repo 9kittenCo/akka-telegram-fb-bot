@@ -8,39 +8,55 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshal}
-import akka.stream.{ActorMaterializer, Materializer}
-import model.FacebookGraphApiJsonProtocol._
-import model.{FacebookGraphApi, Location}
+import akka.stream.ActorMaterializer
+import io.circe._
+import io.circe.generic.auto._
+import model._
+import model.dal.Location
 import service.Config
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
+import scala.concurrent.{ExecutionContextExecutor, Future, Promise}
 
-object FacebookClient extends App with Config with FacebookGraphApi {
+object FacebookClient extends Config with FacebookGraphApi {
   implicit val system: ActorSystem = ActorSystem()
   implicit val mat: ActorMaterializer = ActorMaterializer()
-  // needed for the future flatMap/onComplete in the end
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
   //TODO add city choose funtionality
-  val city = "kyiv"
+//  val city = "kyiv"
 
-  val pagesByCity: Future[Seq[SearchPagesInfo]] = findPagesByCity(city)
+//  val pagesInfoByCity: Future[Seq[PageInfo]] = getPagesInfoByCity(city)
 
-  pagesByCity foreach println
+//  val locations: Future[Seq[Object]] = pagesInfoByCity map { pages: Seq[PageInfo] =>
+//      pages.map(p => p.location_id match {
+//      case Some(loc) => Location(loc.id,loc.city,loc.country,loc.latitude,loc.longitude,loc.street,loc.zip)
+//      case None => _
+//      })
+//      }
 
-  override def findPagesByCity(city: String): Future[Seq[SearchPagesInfo]] = {
-    request[SearchPagesInfo](s"search?q=coworking+$city&type=page") map(_.data)
+//  pagesInfoByCity foreach println
+
+  def getPagesInfoByCity(city: String):Future[Seq[PageInfo]] = {
+    val pages: Future[Seq[PageInfo]] = findPagesByCity(city) flatMap { pages =>
+      Future.sequence {
+        pages map (page => getPageInfo(page.id))
+      }
+    } //map(pagesInfo => pagesInfo.flatten.groupBy(_.))
+    pages
   }
 
-  def getPageInfo(pageId: String) = ???
-  //:Future[Response[PageInfo]] = {
-//    request[T](s"$pageId?fields=name,phone,location,hours,price_range")
-//  }
+  override def findPagesByCity(city: String): Future[Seq[SearchPagesInfo]] = {
+    request[Response[SearchPagesInfo]](s"search?q=coworking+$city&type=page") map (_.data)
+  }
 
-  def getPagesByLocation(location: Location)= ???
+  def getPageInfo(pageId: String): Future[PageInfo] = {
+    request[PageInfo](s"$pageId?fields=name,phone,location,hours,price_range")
+  }
 
-  private[this] def request[T: FromResponseUnmarshaller](requestUri: String)(implicit ec: ExecutionContext, mat: Materializer): Future[Response[T]] = {
+  def getPagesByLocation(location: Location) = ???
+
+  private[this] def request[T: FromResponseUnmarshaller](requestUri: String)(implicit decoder: Decoder[T]): Future[T] = {
     val httpRequest = HttpRequest(
       method = HttpMethods.GET,
       uri = s"$fbServiceUrl/$requestUri",
@@ -51,7 +67,7 @@ object FacebookClient extends App with Config with FacebookGraphApi {
     responseFuture flatMap { response =>
       response.status match {
         case StatusCodes.OK =>
-          Unmarshal(response.entity.withContentType(ContentTypes.`application/json`)).to[Response[T]] //map(_.data)
+          Unmarshal(response.entity.withContentType(ContentTypes.`application/json`)).to[T] //map(_.data)
         case StatusCodes.TooManyRequests => response.headers.find(_.name == "X-RateLimit-Reset").map(_.value.toLong * 1000) match {
           case None => Future.failed(new Exception(s"Number of retries exceeded: ${response.status} ${response.entity}"))
           case Some(timestamp) =>
@@ -73,18 +89,4 @@ object FacebookClient extends App with Config with FacebookGraphApi {
 
     promise.future
   }
-    //    val httpResponse: HttpResponse = Await.result(responseFuture, Duration.Inf)
-    //
-    //    val resp: Option[Response[SearchPagesInfo]] = if (httpResponse.status.isSuccess()) {
-    //      Some(Await.result(Unmarshal(httpResponse.entity.withContentType(ContentTypes.`application/json`)).to[Response[SearchPagesInfo]], Duration.Inf))
-    //    } else {
-    //      None
-    //    }
-//    responseFuture.flatMap(resp =>
-//      resp.status match {
-//        case status if status.isSuccess() => Unmarshal(resp.entity).to[Response[SearchPagesInfo]]
-//        case error                        => Future.failed(sys.error(s"GET $requestUri: ${error.intValue()}"))
-//      })
-    //flatMap {resp: HttpResponse => Unmarshal(resp.entity.withContentType(ContentTypes.`application/json`)).to[T]}
-
-  }
+}

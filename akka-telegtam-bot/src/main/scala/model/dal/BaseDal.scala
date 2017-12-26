@@ -1,6 +1,6 @@
-package model.dao
+package model.dal
 
-import model.db.{PagesTable, LocationsTable}
+import model.db.{LocationsTable, PagesTable}
 import service.DatabaseConfig
 import slick.dbio.NoStream
 import slick.lifted.TableQuery
@@ -8,7 +8,7 @@ import slick.sql.{FixedSqlStreamingAction, SqlAction}
 
 import scala.concurrent.Future
 
-trait BaseDao extends DatabaseConfig {
+trait BaseDal extends DatabaseConfig {
   lazy val pagesTable: TableQuery[PagesTable] = TableQuery[PagesTable]
   lazy val locationsTable: TableQuery[LocationsTable] = TableQuery[LocationsTable]
 

@@ -1,15 +1,17 @@
 package model
 
-import scala.concurrent.Future
-import FacebookGraphApiJsonProtocol._
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import model.dal.Location
 
-trait FacebookGraphApi {
+import scala.concurrent.Future
+
+trait FacebookGraphApi extends FailFastCirceSupport{
 
 //  def newPhotos(accessToken: String, after: Option[String]): Future[Response[Photo]]
 
 //  def getUser(accessToken: String): Future[User]
 
-  def findPagesByCity(city: String): Future[Response[SearchPagesInfo]]
+  def findPagesByCity(city: String): Future[Seq[SearchPagesInfo]]
 
   def getPageInfo(pageId: String): Future[PageInfo]
 

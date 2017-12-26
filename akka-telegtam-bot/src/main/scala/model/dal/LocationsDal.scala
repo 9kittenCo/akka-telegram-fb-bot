@@ -1,18 +1,18 @@
-package model.dao
+package model.dal
 
-import model.Location
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object LocationsDao extends BaseDao {
+object LocationsDal extends BaseDal {
   def findAll(): Future[Seq[Location]] = locationsTable.result
 
   def findById(id: Long): Future[Location] = locationsTable.filter(_.id === id).result.head
 
 //  def findByPageId(pageId: Long): Future[Location] = locationsTable.filter(_.pageId === pageId).result.head
 
-  def findByLocation(latitude: String, longitude:String)(implicit ec:ExecutionContext): Future[Location] = locationsTable.filter(loc => loc.longitude === longitude && loc.latitude === latitude).result.head
+  def findByLocation(latitude: String, longitude:String)(implicit ec:ExecutionContext): Future[Location] =
+    locationsTable.filter(loc => loc.longitude === longitude && loc.latitude === latitude).result.head
 
   def findByCity(cityName:String): Future[Seq[Location]] = locationsTable.filter(_.city === cityName).result
 

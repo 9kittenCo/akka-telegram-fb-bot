@@ -1,16 +1,13 @@
-package model
+package model.dal
 
-import java.sql.Timestamp
-
-case class Location(id: Long,
-//                    pageId:Long,
+case class Location(id:Long,
+                     fbId:String,
                     city: String,
                     country: String,
                     latitude: String,
                     longitude:String,
                     street:String,
-                    zip:String,
-                    createdAt: Timestamp)
+                    zip:String)
 //{
 //  "name": "Coworking \"Chasopys\"",
 //  "phone": "(095)2068621",
