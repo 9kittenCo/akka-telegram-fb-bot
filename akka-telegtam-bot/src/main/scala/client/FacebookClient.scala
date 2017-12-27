@@ -24,42 +24,68 @@ object FacebookClient extends Config with FacebookGraphApi {
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
   //TODO add city choose funtionality
-//  val city = "kyiv"
+  //  val city = "kyiv"
 
-//  val pagesInfoByCity: Future[Seq[PageInfo]] = getPagesInfoByCity(city)
+  //  val pagesInfoByCity: Future[Seq[PageInfo]] = getPagesInfoByCity(city)
 
-//  val locations: Future[Seq[Object]] = pagesInfoByCity map { pages: Seq[PageInfo] =>
-//      pages.map(p => p.location_id match {
-//      case Some(loc) => Location(loc.id,loc.city,loc.country,loc.latitude,loc.longitude,loc.street,loc.zip)
-//      case None => _
-//      })
-//      }
+  //  val locations: Future[Seq[Object]] = pagesInfoByCity map { pages: Seq[PageInfo] =>
+  //      pages.map(p => p.location_id match {
+  //      case Some(loc) => Location(loc.id,loc.city,loc.country,loc.latitude,loc.longitude,loc.street,loc.zip)
+  //      case None => _
+  //      })
+  //      }
 
-//  pagesInfoByCity foreach println
+  //  pagesInfoByCity foreach println
 
-  def getPagesInfoByCity(city: String):Future[Seq[PageInfo]] = {
-    val pages: Future[Seq[PageInfo]] = findPagesByCity(city) flatMap { pages =>
+  def getPagesInfoByCity(city: String): Future[Seq[(PageInfo, Option[PageLocation])]] = {
+    findPagesByCity(city) flatMap { pages =>
       Future.sequence {
         pages map (page => getPageInfo(page.id))
       }
-    } //map(pagesInfo => pagesInfo.flatten.groupBy(_.))
-    pages
+    } map { pages =>
+      pages map { p =>
+        p.location_id match {
+          case Some(loc) => (p, Some(PageLocation(loc.id, loc.city, loc.country, loc.latitude, loc.longitude, loc.street, loc.zip)))
+          case None => (p, None)
+        }
+      }
+    }
   }
 
   override def findPagesByCity(city: String): Future[Seq[SearchPagesInfo]] = {
-    request[Response[SearchPagesInfo]](s"search?q=coworking+$city&type=page") map (_.data)
+    val response = request[Response[SearchPagesInfo]](s"$fbServiceUrl/search?q=coworking+$city&type=page") //map (_.data)
+    response flatMap { p =>
+      p.paging.get.next match {
+        case None => Future(p.data)
+        case Some(nxt) => fetch(nxt, Future(p.data))
+      }
+    }
   }
 
   def getPageInfo(pageId: String): Future[PageInfo] = {
-    request[PageInfo](s"$pageId?fields=name,phone,location,hours,price_range")
+    request[PageInfo](s"$fbServiceUrl/$pageId?fields=name,phone,location,hours,price_range")
   }
 
   def getPagesByLocation(location: Location) = ???
 
+  private def fetch(url: String, pages: Future[Seq[SearchPagesInfo]]): Future[Seq[SearchPagesInfo]] = {
+    val response: Future[Response[SearchPagesInfo]] = request[Response[SearchPagesInfo]](url)
+    response flatMap { p =>
+      p.paging.get.next match {
+        case None => pages
+        case Some(nxt) =>
+          val result: Future[Seq[SearchPagesInfo]] = for {
+            pa <- pages
+          } yield pa ++ p.data
+          fetch(nxt, result)
+      }
+    }
+  }
+
   private[this] def request[T: FromResponseUnmarshaller](requestUri: String)(implicit decoder: Decoder[T]): Future[T] = {
     val httpRequest = HttpRequest(
       method = HttpMethods.GET,
-      uri = s"$fbServiceUrl/$requestUri",
+      uri = requestUri,
       entity = HttpEntity(ContentType(MediaTypes.`application/json`), ""),
       headers = List(Authorization(OAuth2BearerToken(fbAccessToken))))
 
