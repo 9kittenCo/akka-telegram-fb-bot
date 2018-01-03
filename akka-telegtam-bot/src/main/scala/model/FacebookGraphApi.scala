@@ -1,7 +1,6 @@
 package model
 
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import model.dal.Location
 
 import scala.concurrent.Future
 
@@ -15,7 +14,7 @@ trait FacebookGraphApi extends FailFastCirceSupport{
 
   def getPageInfo(pageId: String): Future[PageInfo]
 
-  def getPagesByLocation(location: Location): Future[Seq[PageInfo]]
+  def getPagesByLocation(latitude: Float, longitude: Float)
 
   //  def getTab(pageId: String, appId: String, token: String): Future[Response[Tab]]
 

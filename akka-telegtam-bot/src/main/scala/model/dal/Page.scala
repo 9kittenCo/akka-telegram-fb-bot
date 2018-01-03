@@ -1,7 +1,15 @@
 package model.dal
 
-case class Page(name: String,
-                location_id: Option[Long],
-                location_fb_id:Option[String],
-                phone: String,
-                price_range: Option[String])
+import java.sql.Timestamp
+
+case class Page(fb_id: String,
+                name: String,
+                phone: Option[String],
+                city: String,
+                country: Option[String],
+                price_range: Option[String],
+                latitude: Float,
+                longitude: Float,
+                street: Option[String],
+                zip: Option[String],
+                created_at: Timestamp)

@@ -1,8 +1,7 @@
 package model.dal
 
 import slick.jdbc.PostgresProfile.api._
-
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 object PagesDal extends BaseDal {
 
@@ -12,31 +11,20 @@ object PagesDal extends BaseDal {
 
   def findByName(name: String): Future[Page] = pagesTable.filter(_.name === name).result.head
 
-  def findByLocation(latitude: String, longitude: String)(implicit ec: ExecutionContext): Future[Seq[Page]] =
-    LocationsDal.findByLocation(latitude, longitude) flatMap (loc => pagesTable.filter(_.locationId === loc.id).result)
+  def findByLocation(latitude: Float, longitude: Float): Future[Seq[Page]] =
+    pagesTable.filter(pg => pg.longitude === longitude && pg.latitude === latitude).result
 
-  def findByCity(cityName: String)(implicit ec: ExecutionContext): Future[Seq[Page]] = {
 
-    val findPagesQuery = locationsTable.filter(_.city === cityName)
-      .join(pagesTable).on(_.id === _.locationId)
-      .groupBy(_._2)
-      .result
+  def getByCity(cityName: String): Future[Seq[Page]] = pagesTable.filter(_.city === cityName).result
 
-    val action = for {
-      pagesResult <- findPagesQuery
-    } yield {
-      pagesResult map { row => row._1
-      }
-    }
+  def create(page: Page): Future[Long] = pagesTable returning pagesTable.map(_.id) += page
 
-    db.run(action)
-  }
-
-  def create(coworking: Page): Future[Long] = pagesTable returning pagesTable.map(_.id) += coworking
+  def insert(pages:Seq[Page]):Future[Option[Int]] = pagesTable.delete >> (pagesTable ++= pages)
 
   def update(id: Long, newPage: Page): Future[Int] = {
-    pagesTable.filter(_.id === id).map(page => (page.name, page.phone))
-      .update((newPage.name, newPage.phone))
+    pagesTable.filter(_.id === id).map(page =>
+      (page.name, page.city, page.latitude, page.longitude))
+      .update((newPage.name, newPage.city, newPage.latitude,newPage.longitude))
   }
 
   def delete(id: Long): Future[Int] = {

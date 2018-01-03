@@ -1,8 +1,8 @@
 package model.dal
 
-import model.db.{LocationsTable, PagesTable}
+import model.db.{CityTable, PagesTable}
 import service.DatabaseConfig
-import slick.dbio.NoStream
+import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.lifted.TableQuery
 import slick.sql.{FixedSqlStreamingAction, SqlAction}
 
@@ -10,9 +10,13 @@ import scala.concurrent.Future
 
 trait BaseDal extends DatabaseConfig {
   lazy val pagesTable: TableQuery[PagesTable] = TableQuery[PagesTable]
-  lazy val locationsTable: TableQuery[LocationsTable] = TableQuery[LocationsTable]
+  lazy val citiesTable: TableQuery[CityTable] = TableQuery[CityTable]
 
   protected implicit def executeFormDb[A](action: SqlAction[A, NoStream, _ <: slick.dbio.Effect]): Future[A] = {
+    db.run(action)
+  }
+
+  protected implicit def executeSeqFormDb[A](action: DBIOAction[Option[A], NoStream, Effect.Write with Effect.Write]): Future[Option[A]] = {
     db.run(action)
   }
 
