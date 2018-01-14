@@ -7,7 +7,6 @@ import akka.http.scaladsl.server.Route
 import client.CityClient._
 import client.FacebookClient._
 import client._
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder.Result
 import io.circe._
 import io.circe.generic.extras.auto._
@@ -15,8 +14,8 @@ import io.circe.syntax._
 import model.dal._
 
 
-trait PagesApi extends ApiErrorHandler with FailFastCirceSupport with BaseClient {
-//  implicit val config: Configuration = Configuration.default.withSnakeCaseKeys
+trait PagesApi extends ApiErrorHandler with BaseClient {
+
   implicit val TimestampFormat: Encoder[Timestamp] with Decoder[Timestamp] = new Encoder[Timestamp] with Decoder[Timestamp] {
     override def apply(a: Timestamp): Json = Encoder.encodeLong.apply(a.getTime)
 
@@ -29,12 +28,17 @@ trait PagesApi extends ApiErrorHandler with FailFastCirceSupport with BaseClient
     } ~
       (path("coworkings" / "city" / Segment) & get) { name: String =>
         complete {
-          PagesDal.getByCity(name.toLowerCase).map (_.asJson)
+          PagesDal.getByCity(name.toLowerCase).map(_.asJson)
+        }
+      } ~
+      (path("coworkings" / "search") & parameters(('lat.as[Float], 'lon.as[Float]))) { (lat: Float, lon: Float) =>
+        complete {
+          getPagesByLocation(lat, lon) map (_.asJson)
         }
       } ~
       (path("coworkings" / "cities") & parameters(('lat.as[Float], 'lon.as[Float]))) { (lat: Float, lon: Float) =>
         complete {
-          findNearestCities(lat, lon) map (_.asJson)
+          getNearestCities(lat, lon) map (_.asJson)
         }
       } ~
       (path("coworkings" / "update" / "city" / Segment) & get) { name: String =>
@@ -45,7 +49,7 @@ trait PagesApi extends ApiErrorHandler with FailFastCirceSupport with BaseClient
       } ~
       (path("coworkings" / "id" / Segment) & get) { pageId: String =>
         complete {
-          getPageInfo(pageId).map (_.asJson)
+          getPageInfo(pageId).map(_.asJson)
         }
       } ~
       (path("coworkings" / IntNumber) & get) { id =>
@@ -64,4 +68,8 @@ trait PagesApi extends ApiErrorHandler with FailFastCirceSupport with BaseClient
       (path("coworkings" / IntNumber) & delete) { id =>
         complete(PagesDal.delete(id).map(_.asJson))
       }
+
+  val telegramRoute: Route = (path("cowobot") & get) {
+    complete(TelegramClient.msgs.map(_.asJson))
+  }
 }

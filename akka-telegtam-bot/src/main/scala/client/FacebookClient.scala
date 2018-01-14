@@ -2,22 +2,20 @@ package client
 
 import java.sql.Timestamp
 import java.util.Date
-import java.util.concurrent.TimeUnit
 
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
-import akka.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshal}
-import io.circe._
+import client.CityClient._
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import helpers.CityName
 import io.circe.generic.extras.auto._
 import model._
 import model.dal.{Page, PagesDal}
 import service.Config
+import utils.DistanceCalculation.getDistance
+import utils.RetrieveData
 
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.Future
 
-object FacebookClient extends Config with FacebookGraphApi with BaseClient {
+object FacebookClient extends Config with BaseClient with FailFastCirceSupport {
 
   def updatePagesByCity(city: String): Future[Option[Int]] = {
     getPagesInfoByCity(city) flatMap { pageInfos =>
@@ -58,15 +56,15 @@ object FacebookClient extends Config with FacebookGraphApi with BaseClient {
       loc.get.city,
       loc.get.country,
       pageInfo.price_range,
-      loc.get.longitude.getOrElse(0f),
       loc.get.latitude.getOrElse(0f),
+      loc.get.longitude.getOrElse(0f),
       loc.get.street,
       loc.get.zip,
       new Timestamp(new Date().getTime)))
   }
 
-  override def findPagesByCity(city: String): Future[Seq[SearchPagesInfo]] = {
-    val response = request[Response[SearchPagesInfo]](s"$fbServiceUrl/search?q=coworking+$city&type=page") //map (_.data)
+  def findPagesByCity(city: String): Future[Seq[SearchPagesInfo]] = {
+    val response = RetrieveData.request[Response[SearchPagesInfo]](s"$fbServiceUrl/search?q=coworking+$city&type=page")
     response flatMap { p =>
       p.paging.get.next match {
         case None => Future(p.data)
@@ -76,29 +74,24 @@ object FacebookClient extends Config with FacebookGraphApi with BaseClient {
   }
 
   def getPageInfo(pageId: String): Future[PageInfo] = {
-    request[PageInfo](s"$fbServiceUrl/$pageId?fields=name,phone,location,hours,price_range")
+    RetrieveData.request[PageInfo](s"$fbServiceUrl/$pageId?fields=name,phone,location,hours,price_range")
   }
 
-  override def getPagesByLocation(latitude: Float, longitude: Float) = ??? //{
-  //      val city: String = getNearestCity(latitude, longitude)
-  //      val ll = getPagesInfoByCity(city) flatMap { pages =>
-  //  //      Future.sequence {
-  //          pages map {page: PageInfo =>
-  //            page.location match {
-  //              case Some(loc) => (page, getCoordinatesDistance(loc.latitude,loc.longitude, latitude, longitude))
-  //              case None => (page,None)
-  //            }
-  //          }
-  //  //      }
-  //      }
-  //    }
-
-  def getCoordinatesDistance(latitude1: Float, longitude1: Float, latitude2: Float, longitude2: Float): Option[Long] = ???
-
-  def getNearestCity(latitude: Float, longitude: Float): String = ???
+  def getPagesByLocation(latitude: Float, longitude: Float): Future[List[(CityName, Page, Int)]] = {
+    //todo need refactor to check is that city pages exsist in db
+    getNearestCities(latitude, longitude) flatMap { n_cities =>
+      Future.sequence {
+        n_cities map (n_city => PagesDal.getByCity(n_city._1))
+      }
+    } map { n_pages =>
+      n_pages.flatten.map { n_page =>
+        (n_page.city, n_page, getDistance(latitude, longitude, n_page.latitude, n_page.longitude))
+      } sortBy (_._3)
+    } map (data => data.take(3))
+  }
 
   private def fetch(url: String, pages: Future[Seq[SearchPagesInfo]]): Future[Seq[SearchPagesInfo]] = {
-    val response: Future[Response[SearchPagesInfo]] = request[Response[SearchPagesInfo]](url)
+    val response: Future[Response[SearchPagesInfo]] = RetrieveData.request[Response[SearchPagesInfo]](url)
     response flatMap { p =>
       p.paging.get.next match {
         case None => pages
@@ -110,39 +103,4 @@ object FacebookClient extends Config with FacebookGraphApi with BaseClient {
       }
     }
   }
-
-  private[this] def request[T: FromResponseUnmarshaller](requestUri: String)(implicit decoder: Decoder[T]): Future[T] = {
-    val httpRequest = HttpRequest(
-      method = HttpMethods.GET,
-      uri = requestUri,
-      entity = HttpEntity(ContentType(MediaTypes.`application/json`), ""),
-      headers = List(Authorization(OAuth2BearerToken(fbAccessToken))))
-
-    val responseFuture: Future[HttpResponse] = Http().singleRequest(httpRequest)
-    responseFuture flatMap { response =>
-      response.status match {
-        case StatusCodes.OK =>
-          Unmarshal(response.entity.withContentType(ContentTypes.`application/json`)).to[T]
-        case StatusCodes.TooManyRequests => response.headers.find(_.name == "X-RateLimit-Reset").map(_.value.toLong * 1000) match {
-          case None => Future.failed(new Exception(s"Number of retries exceeded: ${response.status} ${response.entity}"))
-          case Some(timestamp) =>
-            delay(FiniteDuration(timestamp - new Date().getTime, TimeUnit.MILLISECONDS)) {
-              request[T](requestUri)
-            }
-        }
-        case _ => Future.failed(new Exception(s"Invalid response: ${response.status}"))
-      }
-    }
-  }
-
-  private[this] def delay[T](delay: FiniteDuration)(action: => Future[T]) = {
-    val promise = Promise[T]()
-
-    system.scheduler.scheduleOnce(delay) {
-      promise.completeWith(action)
-    }(system.dispatcher)
-
-    promise.future
-  }
-
 }

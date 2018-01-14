@@ -10,7 +10,7 @@ libraryDependencies ++= {
     val scalaTest   = "3.0.1"
     val scalaMock   = "3.5.0"
     val slick       = "3.2.1"
-    val circe       = "0.8.0"
+    val circe       = "0.9.0"
 
   }
 
@@ -41,3 +41,21 @@ resolvers += "Typesafe" at "https://repo.typesafe.com/typesafe/releases/"
 resolvers += Resolver.bintrayRepo("hseeberger", "maven")
 
 fork in run := true
+
+val compilerOptions = Seq(
+  "-deprecation",
+  "-encoding", "UTF-8",
+  "-feature",
+  "-language:_",
+  "-unchecked",
+  "-Xlint:_",
+  "-Xfatal-warnings",
+  "-Xfuture",
+  "-Yno-adapted-args",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-unused-import",
+  "-Ypartial-unification",
+  "-Ywarn-value-discard"
+)
+
+scalacOptions in Compile ++= compilerOptions

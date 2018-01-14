@@ -11,10 +11,25 @@ trait Config {
 
   private lazy val facebookConfig = config.getConfig("api.facebook")
   lazy val fbServiceUrl: String = facebookConfig.getString("serviceUrl")
-  lazy val fbAccessToken: String = facebookConfig.getString("appToken")
+
+  private lazy val telegramConfig = config.getConfig("api.telegram")
+  lazy val tgServiceUrl: String = telegramConfig.getString("serviceUrl")
+
 
   val databaseUrl: String = databaseConfig.getString("url")
   val databaseUser: String = databaseConfig.getString("user")
   val databasePassword: String = databaseConfig.getString("password")
 
+  lazy val fbAccessToken: String = getToken("facebook.token")
+  lazy val tgAccessToken: String = getToken("bot.token")
+
+  lazy val telegramUrl = s"$tgServiceUrl/bot$tgAccessToken"
+
+  def getToken(tokenName: String): String = {
+    getClass.getResourceAsStream(s"/$tokenName")
+    val file_ = scala.io.Source.fromInputStream(getClass.getResourceAsStream(s"/$tokenName"))
+    scala.util.Properties
+      .envOrNone("TOKEN")
+      .getOrElse(file_.getLines().mkString)
+  }
 }

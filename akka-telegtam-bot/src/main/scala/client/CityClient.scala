@@ -3,6 +3,7 @@ package client
 import java.sql.Timestamp
 import java.util.Date
 
+import helpers.{CityName, Distance}
 import model.dal.{CitiesDal, City}
 import utils.DistanceCalculation.getDistance
 
@@ -20,10 +21,12 @@ object CityClient extends BaseClient {
       new Timestamp(new Date().getTime))
   } toSeq
 
-  //@todo implement search by KNN algorithm
-  def findNearestCities(lat: Float, lon: Float): Future[List[(City, Double)]] = {
-    CitiesDal.findAll() map  { cities =>
-        cities.map(city => (city, getDistance(lat, lon, city.latitude, city.longitude))).toList.sortBy(_._2)
-    } map(data => data.take(3))
+  //@todo implement full text search
+  def getNearestCities(lat: Float, lon: Float): Future[List[(CityName, Distance)]] = {
+    CitiesDal.findAll() map { cities =>
+      cities.map(city =>
+        (city.name, getDistance(lat, lon, city.latitude, city.longitude))).toList.sortBy(_._2)
+    } map (data =>
+      data.take(3))
   }
 }

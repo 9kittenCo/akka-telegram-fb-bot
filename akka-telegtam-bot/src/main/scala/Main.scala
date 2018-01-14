@@ -7,8 +7,8 @@ import service.{Config, MigrationConfig}
 object Main extends App with Config with MigrationConfig with Routes {
   protected val log: LoggingAdapter = Logging(system, getClass)
 
-  //migrate()
-  reloadSchema()
+  migrate()
+  //reloadSchema()
 
   val bindingFuture = Http()
     .bindAndHandle(handler = logRequestResult("log")(routes)
