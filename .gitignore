@@ -1,11 +1,9 @@
 #akka-telegram-fb-bot
 
-*.class
 *.log
 
 # sbt specific
 .cache
-.history
 .lib/
 dist/*
 target/
@@ -17,3 +15,5 @@ project/plugins/project/
 # Scala-IDE specific
 .idea/
 rest.iml
+/src/main/resources/alternateNames/alternateNames.txt
+/src/main/resources/cities15000.txt
