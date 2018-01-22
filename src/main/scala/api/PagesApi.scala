@@ -14,7 +14,7 @@ import io.circe.syntax._
 import model.dal._
 
 
-trait PagesApi extends ApiErrorHandler with BaseClient {
+class PagesApi extends ApiErrorHandler with BaseClient {
 
   implicit val TimestampFormat: Encoder[Timestamp] with Decoder[Timestamp] = new Encoder[Timestamp] with Decoder[Timestamp] {
     override def apply(a: Timestamp): Json = Encoder.encodeLong.apply(a.getTime)
@@ -69,7 +69,7 @@ trait PagesApi extends ApiErrorHandler with BaseClient {
         complete(PagesDal.delete(id.toLong).map(_.asJson))
       }
 
-  val telegramRoute: Route = (path("cowobot") & get) {
-    complete(TelegramClient.msgsF.map(_.asJson))
-  }
+//  val telegramRoute: Route = (path("cowobot") & get) {
+//    complete(TelegramClient.msgsF.map(_.asJson))
+//  }
 }

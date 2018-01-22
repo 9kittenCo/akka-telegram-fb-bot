@@ -15,7 +15,7 @@ import utils.RetrieveData
 
 import scala.concurrent.Future
 
-object FacebookClient extends Config with BaseClient with FailFastCirceSupport {
+object FacebookClient extends BaseClient with Config with FailFastCirceSupport {
 
   case class PageDistance(page:Page, distance_km: Distance_km)
 

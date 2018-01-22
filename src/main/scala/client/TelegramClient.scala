@@ -8,41 +8,37 @@ import api.TelegramApiException
 import client.FacebookClient._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import helpers.Distance_km
-import io.circe.{Decoder, Json}
-import io.circe.syntax._
 import io.circe.generic.extras.auto._
+import io.circe._
 import model._
 import service.Config
-//import cats.implicits._
+import cats.implicits._
 
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
 
-object TelegramClient extends Config with BaseClient with FailFastCirceSupport {
-
-  //  case class UserMessage(user: User, pagesF: List[ParsedUserMessage])
+object TelegramClient extends BaseClient with Config with FailFastCirceSupport {
 
   case class ParsedUserMessage(userId: String, name: String, ulr: String, longitude: Float, latitude: Float, distance: Distance_km)
 
   val msgsF: Future[List[Update]] = checkUpdates()
 
-  val usrmsges: Future[Seq[(User,Location)]] = for {
-    msgs: List[Update] <- msgsF
-    msg <- msgs.filter(_.message.isDefined).flatMap(_.message)
-    user = msg.from
-    loc = msg.location
-  } yield (user.get, loc.get)
+//  lazy val usrmsges: Future[Seq[(User,Location)]] = for {
+//    msgs: List[Update] <- msgsF
+//    msg <- msgs.filter(_.message.isDefined).flatMap(_.message)
+//    user = msg.from
+//    loc = msg.location
+//  } yield (user.get, loc.get)
 
-  val usr_msgsF: Future[Seq[ParsedUserMessage]] = processMessages(usrmsges)
-
-  usr_msgsF.onComplete {
-    case Success(usr_msgs) => usr_msgs.foreach { usr_msg =>
-      sendMessage(SendMessage(usr_msg.userId, s"${usr_msg.name} - ${usr_msg.distance} km. \n ${usr_msg.ulr}").asJson, "sendMessage")
-      sendMessage(SendLocation(usr_msg.userId, usr_msg.latitude, usr_msg.longitude).asJson, "sendLocation")
-    }
-    case Failure(f) => throw new Exception(f)
-  }
+//  lazy val usr_msgsF: Future[Seq[ParsedUserMessage]] = processMessages(usrmsges)
+//
+//  usr_msgsF.onComplete {
+//    case Success(usr_msgs) => usr_msgs.foreach { usr_msg =>
+//      sendMessage(SendMessage(usr_msg.userId, s"${usr_msg.name} - ${usr_msg.distance} km. \n ${usr_msg.ulr}").asJson, "sendMessage")
+//      sendMessage(SendLocation(usr_msg.userId, usr_msg.latitude, usr_msg.longitude).asJson, "sendLocation")
+//    }
+//    case Failure(f) => throw new Exception(f)
+//  }
 
 
   def checkUpdates(): Future[List[Update]] = {

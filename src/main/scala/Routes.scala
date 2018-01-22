@@ -1,12 +1,15 @@
 import api.{ApiErrorHandler, PagesApi}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import service.Config
 
-trait Routes extends ApiErrorHandler with PagesApi {
+object Routes extends ApiErrorHandler with Config {
+
+  lazy val pagesApi = new PagesApi
+
   val routes: Route =
     pathPrefix("v1") {
-      telegramRoute //coworkingsRoute
-    }// ~ {
-    //  telegramRoute
-    //}
+      pagesApi.coworkingsRoute //~
+       // pagesApi.telegramRoute
+    }
 }

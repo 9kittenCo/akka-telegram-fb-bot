@@ -1,29 +1,33 @@
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.{HttpApp, Route}
 import akka.stream.ActorMaterializer
 import service.{Config, MigrationConfig}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+import scala.io.StdIn
 
-object Main extends App with Config with MigrationConfig with Routes {
+object Main extends HttpApp with Config with MigrationConfig {
   private implicit val system: ActorSystem = ActorSystem()
-  protected implicit val executor: ExecutionContext = system.dispatcher
+  implicit val executor: ExecutionContext = system.dispatcher
   protected val log: LoggingAdapter = Logging(system, getClass)
-  protected implicit val materializer: ActorMaterializer = ActorMaterializer()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
+
+  override protected def routes: Route = Routes.routes
 
   migrate()
-  //reloadSchema()
 
-  val bindingFuture = Http().bindAndHandle(handler = logRequestResult("log")(routes)
+  val bindingFuture: Future[Http.ServerBinding] = Http()
+    .bindAndHandle(handler = logRequestResult("log")(routes)
       , interface = httpInterface, port = httpPort)
 
   println(s"Server online at $httpInterface:$httpPort\nPress RETURN to stop...")
-  scala.io.StdIn.readLine()
+  StdIn.readLine()
 
   bindingFuture
     .flatMap(_.unbind())
     .onComplete(_ => system.terminate())
+
 }
 
