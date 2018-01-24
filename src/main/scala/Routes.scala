@@ -9,7 +9,7 @@ object Routes extends ApiErrorHandler with Config {
 
   val routes: Route =
     pathPrefix("v1") {
-      pagesApi.coworkingsRoute //~
-       // pagesApi.telegramRoute
+      pagesApi.coworkingsRoute ~
+      pagesApi.telegramRoute
     }
 }

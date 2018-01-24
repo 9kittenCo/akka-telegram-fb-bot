@@ -14,14 +14,20 @@ import model._
 import service.Config
 import cats.implicits._
 
+import scala.concurrent.{ExecutionContext, Future}
 
-import scala.concurrent.Future
+object TelegramClient extends Config with FailFastCirceSupport {
 
-object TelegramClient extends BaseClient with Config with FailFastCirceSupport {
+  import scala.concurrent.ExecutionContext.Implicits.global._
 
-  case class ParsedUserMessage(userId: String, name: String, ulr: String, longitude: Float, latitude: Float, distance: Distance_km)
+  case class ParsedUserMessage(userId: String,
+                               name: String,
+                               ulr: String,
+                               longitude: Float,
+                               latitude: Float,
+                               distance: Distance_km)
 
-  val msgsF: Future[List[Update]] = checkUpdates()
+  val msgsF: Future[Seq[Update]] = checkUpdates()
 
 //  lazy val usrmsges: Future[Seq[(User,Location)]] = for {
 //    msgs: List[Update] <- msgsF
@@ -40,12 +46,20 @@ object TelegramClient extends BaseClient with Config with FailFastCirceSupport {
 //    case Failure(f) => throw new Exception(f)
 //  }
 
-
-  def checkUpdates(): Future[List[Update]] = {
-    request[TelegramResponse[List[Update]]](s"$telegramUrl/getUpdates") flatMap {
-      case TelegramResponse(true, Some(result), _, _, _) => Future.successful(result)
-      case TelegramResponse(false, _, description, Some(errorCode), parameters) =>
-        val e = TelegramApiException(description.getOrElse("Unexpected/invalid/empty response"), errorCode, None, parameters)
+  def checkUpdates()(implicit ec: ExecutionContext): Future[Seq[Update]] = {
+    request[TelegramResponse[Update]](s"$telegramUrl/getUpdates") flatMap {
+      case TelegramResponse(true, Some(result), _, _, _) =>
+        Future.successful(result)
+      case TelegramResponse(false,
+                            _,
+                            description,
+                            Some(errorCode),
+                            parameters) =>
+        val e = TelegramApiException(
+          description.getOrElse("Unexpected/invalid/empty response"),
+          errorCode,
+          None,
+          parameters)
         Future.failed(e)
       case _ =>
         val msg = "Error on request response"
@@ -53,24 +67,25 @@ object TelegramClient extends BaseClient with Config with FailFastCirceSupport {
     }
   }
 
-  def processMessages(messagesF: Future[Seq[(User, Location)]]): Future[Seq[ParsedUserMessage]] = {
+  def processMessages(messagesF: Future[Seq[(User, Location)]])(implicit ec: ExecutionContext)
+    : Future[Seq[ParsedUserMessage]] = {
     for {
       msgs <- messagesF
       msg: (User, Location) <- msgs
-      pglocs: Seq[PageDistance] <- getPagesByLocation(msg._2.latitude, msg._2.longitude)
+      pglocs: Seq[PageDistance] <- getPagesByLocation(msg._2.latitude,
+                                                      msg._2.longitude)
       pgloc: PageDistance <- pglocs
     } yield {
-      ParsedUserMessage(
-        msg._1.id.toString,
-        pgloc.page.name,
-        s"https://facebook/$pgloc.page.fb_id)",
-        pgloc.page.latitude,
-        pgloc.page.longitude,
-        pgloc.distance_km)
+      ParsedUserMessage(msg._1.id.toString,
+                        pgloc.page.name,
+                        s"https://facebook/$pgloc.page.fb_id)",
+                        pgloc.page.latitude,
+                        pgloc.page.longitude,
+                        pgloc.distance_km)
     }
   }
 
-  def sendMessage(message: Json, method: String): Future[Message] = {
+  def sendMessage(message: Json, method: String)(implicit ec: ExecutionContext): Future[Message] = {
     //logger.debug(payload.toJson.prettyPrint)
     val uri = s"$telegramUrl/$method"
     val body = RequestBuilding.Post(Uri(uri), content = message)
@@ -82,14 +97,18 @@ object TelegramClient extends BaseClient with Config with FailFastCirceSupport {
     }
   }
 
-  def request[T](requestUri: String)(implicit decoder: Decoder[T]): Future[T] = {
+  def request[T](requestUri: String)(
+      implicit decoder: Decoder[T], ec: ExecutionContext): Future[T] = {
     val httpRequest = HttpRequest(uri = requestUri)
     val responseFuture: Future[HttpResponse] = Http().singleRequest(httpRequest)
     responseFuture flatMap { response =>
       response.status match {
         case StatusCodes.OK =>
-          Unmarshal(response.entity.withContentType(ContentTypes.`application/json`)).to[T]
-        case _ => Future.failed(new Exception(s"Invalid response: ${response.status}"))
+          Unmarshal(
+            response.entity.withContentType(ContentTypes.`application/json`))
+            .to[T]
+        case _ =>
+          Future.failed(new Exception(s"Invalid response: ${response.status}"))
       }
     }
   }

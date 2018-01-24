@@ -29,7 +29,7 @@ case class ResponseParameters(
                              )
 
 case class TelegramResponse[T](ok: Boolean,
-                               result: Option[T] = None,
+                               result: Option[Seq[T]] = None,
                                description: Option[String] = None,
                                errorCode: Option[Int] = None,
                                parameters: Option[ResponseParameters] = None)

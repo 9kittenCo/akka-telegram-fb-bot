@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.Route
 import client.CityClient._
 import client.FacebookClient._
 import client._
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder.Result
 import io.circe._
 import io.circe.generic.extras.auto._
@@ -14,7 +15,7 @@ import io.circe.syntax._
 import model.dal._
 
 
-class PagesApi extends ApiErrorHandler with BaseClient {
+class PagesApi extends ApiErrorHandler with FailFastCirceSupport {
 
   implicit val TimestampFormat: Encoder[Timestamp] with Decoder[Timestamp] = new Encoder[Timestamp] with Decoder[Timestamp] {
     override def apply(a: Timestamp): Json = Encoder.encodeLong.apply(a.getTime)
@@ -69,7 +70,7 @@ class PagesApi extends ApiErrorHandler with BaseClient {
         complete(PagesDal.delete(id.toLong).map(_.asJson))
       }
 
-//  val telegramRoute: Route = (path("cowobot") & get) {
-//    complete(TelegramClient.msgsF.map(_.asJson))
-//  }
+  val telegramRoute: Route = (path("cowobot") & get) {
+    complete(TelegramClient.msgsF.map(_.asJson))
+  }
 }
