@@ -1,20 +1,17 @@
-import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.{HttpApp, Route}
-import akka.stream.ActorMaterializer
-import service.{Config, MigrationConfig}
+import akka.http.scaladsl.server.Directives._
+import api.PagesApi
+import client.BaseClient
+import service.MigrationConfig
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.io.StdIn
 
-object Main extends HttpApp with Config with MigrationConfig {
-  private implicit val system: ActorSystem = ActorSystem()
-  implicit val executor: ExecutionContext = system.dispatcher
-  protected val log: LoggingAdapter = Logging(system, getClass)
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
+object Main extends App with BaseClient with MigrationConfig with PagesApi with Routes {
 
-  override protected def routes: Route = Routes.routes
+ // protected def routes: Route = Routes.routes
+ protected val log: LoggingAdapter = Logging(system, getClass)
 
   migrate()
 

@@ -4,7 +4,6 @@ import java.sql.Timestamp
 import java.util.Date
 
 import client.CityClient._
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import helpers.Distance_km
 import io.circe.generic.extras.auto._
 import model._
@@ -15,9 +14,9 @@ import utils.RetrieveData
 
 import scala.concurrent.Future
 
-object FacebookClient extends Config with FailFastCirceSupport {
+object FacebookClient extends BaseClient with Config {
 
-  case class PageDistance(page:Page, distance_km: Distance_km)
+  case class PageDistance(page: Page, distance_km: Distance_km)
 
   def updatePagesByCity(city: String): Future[Option[Int]] = {
     getPagesInfoByCity(city) flatMap { pageInfos =>
@@ -80,7 +79,7 @@ object FacebookClient extends Config with FailFastCirceSupport {
   }
 
   def getPagesByLocation(latitude: Float, longitude: Float): Future[List[PageDistance]] = {
-    //todo need refactor to check is that city pages exsist in db
+    //todo need refactor to check is that city pages exsisting in db
     getNearestCities(latitude, longitude) flatMap { n_cities =>
       Future.sequence {
         n_cities map (n_city => PagesDal.getByCity(n_city._1))

@@ -3,27 +3,18 @@ package utils
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.unmarshalling.{FromResponseUnmarshaller, Unmarshal}
-import akka.stream.ActorMaterializer
+import client.BaseClient
 import client.FacebookClient.fbAccessToken
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Decoder
-import io.circe.generic.extras.Configuration
+import io.circe._
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContextExecutor, Future, Promise}
+import scala.concurrent.{Future, Promise}
 
-object RetrieveData extends FailFastCirceSupport {
-
-  implicit val system: ActorSystem = ActorSystem()
-  implicit val mat: ActorMaterializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
-  implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
-
+object RetrieveData extends BaseClient {
   def request[T: FromResponseUnmarshaller](requestUri: String)(implicit decoder: Decoder[T]): Future[T] = {
     val httpRequest = HttpRequest(
       method = HttpMethods.GET,

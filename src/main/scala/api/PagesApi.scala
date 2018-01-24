@@ -15,7 +15,7 @@ import io.circe.syntax._
 import model.dal._
 
 
-class PagesApi extends ApiErrorHandler with FailFastCirceSupport {
+trait PagesApi extends BaseClient with FailFastCirceSupport {
 
   implicit val TimestampFormat: Encoder[Timestamp] with Decoder[Timestamp] = new Encoder[Timestamp] with Decoder[Timestamp] {
     override def apply(a: Timestamp): Json = Encoder.encodeLong.apply(a.getTime)
@@ -71,6 +71,6 @@ class PagesApi extends ApiErrorHandler with FailFastCirceSupport {
       }
 
   val telegramRoute: Route = (path("cowobot") & get) {
-    complete(TelegramClient.msgsF.map(_.asJson))
+    complete(TelegramClient.checkUpdates().map(_.asJson))
   }
 }

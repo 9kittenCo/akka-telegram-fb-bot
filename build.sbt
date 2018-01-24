@@ -59,10 +59,10 @@ val compilerOptions = Seq(
   "-Xfatal-warnings",
   "-Xfuture",
   "-Yno-adapted-args",
-  "-Ywarn-numeric-widen",
+//  "-Ywarn-numeric-widen",
   "-Ywarn-unused-import",
-  "-Ypartial-unification",
-  "-Ywarn-value-discard"
+  "-Ypartial-unification"
+//  "-Ywarn-value-discard"
 )
 
 scalacOptions in Compile ++= compilerOptions
