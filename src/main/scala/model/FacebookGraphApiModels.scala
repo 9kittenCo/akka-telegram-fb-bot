@@ -1,5 +1,8 @@
 package model
 
+import helpers.Distance_km
+import model.dal.Page
+
 case class Cursors(
                     after: String,
                     before: String
@@ -44,3 +47,5 @@ case class PageLocation(city: String,
 case class Error(message: String, `type`: String, code: Int, error_subcode: Option[Int])
 
 case class ErrorResponse(error: Error)
+
+case class PageDistance(page: Page, distance_km: Distance_km)

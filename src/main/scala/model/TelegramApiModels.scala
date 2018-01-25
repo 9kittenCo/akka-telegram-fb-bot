@@ -29,7 +29,7 @@ case class ResponseParameters(
                              )
 
 case class TelegramResponse[T](ok: Boolean,
-                               result: Option[Seq[T]] = None,
+                               result: Option[T] = None,
                                description: Option[String] = None,
                                errorCode: Option[Int] = None,
                                parameters: Option[ResponseParameters] = None)
@@ -146,6 +146,8 @@ case class Message(
                     //                    newChatPhoto: Option[List[PhotoSize]] = None,
                     deleteChatPhoto: Option[Boolean] = None,
                     groupChatCreated: Option[Boolean] = None)
+
+
 
 //case class WebhookInfo(
 //                        url: String,

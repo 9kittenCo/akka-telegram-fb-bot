@@ -5,12 +5,12 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import helpers.Distance_km
 import io.circe._
-import model.{TelegramResponse, Update}
+import model._
 import service.Config
 
 import scala.concurrent.Future
 
-object TelegramClient extends BaseClient with Config {
+object TelegramClient extends BaseClient with Config with CirceDecoders {
 
   case class ParsedUserMessage(userId: String,
                                name: String,
@@ -38,11 +38,11 @@ object TelegramClient extends BaseClient with Config {
   //    case Failure(f) => throw new Exception(f)
   //  }
 
-  def checkUpdates(): Future[Either[Seq[Update],String]] = {
-    request[TelegramResponse[Update]](s"$telegramUrl/getUpdates") map {
-      case TelegramResponse(true, Some(result), _, _, _) => Left(result)
-      case TelegramResponse(false, _, description, Some(errorCode), parameters) => Right(s"$errorCode $description")
-      case _ => Right("Error on request response")
+  def checkUpdates(): Future[Seq[Update]] = {
+    request[TelegramResponse[Seq[Update]]](s"$telegramUrl/getUpdates") flatMap  {
+      case TelegramResponse(true, Some(result), _, _, _) => Future(result)
+      case TelegramResponse(false, _, description, Some(errorCode), parameters) => Future.successful(Seq.empty)
+      case _ => Future.failed(throw new Exception(""))
     }
   }
 

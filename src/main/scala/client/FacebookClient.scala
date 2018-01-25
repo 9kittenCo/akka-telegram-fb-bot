@@ -4,7 +4,6 @@ import java.sql.Timestamp
 import java.util.Date
 
 import client.CityClient._
-import helpers.Distance_km
 import io.circe.generic.extras.auto._
 import model._
 import model.dal.{Page, PagesDal}
@@ -15,8 +14,6 @@ import utils.RetrieveData
 import scala.concurrent.Future
 
 object FacebookClient extends BaseClient with Config {
-
-  case class PageDistance(page: Page, distance_km: Distance_km)
 
   def updatePagesByCity(city: String): Future[Option[Int]] = {
     getPagesInfoByCity(city) flatMap { pageInfos =>

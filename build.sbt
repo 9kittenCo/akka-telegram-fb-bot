@@ -2,7 +2,7 @@ name := "telegtam-bot"
 
 version := "0.1.1"
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.3"
 
 libraryDependencies ++= {
   object Version {

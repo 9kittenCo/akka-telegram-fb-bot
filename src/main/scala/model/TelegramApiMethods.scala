@@ -18,3 +18,10 @@ case class SendLocation(
                          replyToMessageId: Option[Long] = None
  //                        reply_markup: Option[ReplyMarkup] = None
                        )
+
+case class GetUpdates(
+                       offset: Option[Long] = None,
+                       limit: Option[Int] = Some(100),
+                       timeout: Option[Int] = Some(0),
+                       allowed_updates: Option[List[String]] = None
+                     )
