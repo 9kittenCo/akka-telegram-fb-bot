@@ -1,14 +1,22 @@
 package model
 
+import java.sql.Timestamp
 import java.time.Duration
 import java.util.Date
 
-import io.circe.Encoder
+import io.circe._
 import io.circe.generic.extras._
 import io.circe.generic.extras.semiauto._
+//import model.ChatType.ChatType
 import model.dal.{City, Page}
 
 trait CirceEncoders {
+
+  implicit val TimestampEncoder: Encoder[Timestamp] =
+    new Encoder[Timestamp] {
+      override def apply(a: Timestamp): Json =
+        Encoder.encodeLong.apply(a.getTime)
+    }
 
   implicit val customConfig: Configuration = Configuration.default.withSnakeCaseMemberNames.withDefaults
 
@@ -16,21 +24,27 @@ trait CirceEncoders {
   implicit val dateEncoder: Encoder[Date] = Encoder[Long].contramap[Date](d ⇒ d.getTime)
   implicit val durationEncoder: Encoder[Duration] = Encoder[Int].contramap[Duration](d ⇒ d.getSeconds.toInt)
 
-  implicit val callbackQueryEncoder: Encoder[CallbackQuery] = deriveEncoder[CallbackQuery]
+//  implicit val callbackQueryEncoder: Encoder[CallbackQuery] = deriveEncoder[CallbackQuery]
 
+//  implicit val chatTypeEncoder: Encoder[ChatType] =
+//    Encoder[String].contramap[ChatType](e => e.toString)
   implicit val chatEncoder: Encoder[Chat] = deriveEncoder[Chat]
+//  implicit val chatPhotoEncoder: Encoder[ChatPhoto] = deriveEncoder[ChatPhoto]
+//  implicit val photoSizeEncoder: Encoder[PhotoSize] = deriveEncoder[PhotoSize]
+  implicit val locationEncoder: Encoder[Location] = deriveEncoder[Location]
+  implicit val messageEncoder: Encoder[Message] = deriveEncoder[Message]
 
   implicit val userEncoder: Encoder[User] = deriveEncoder[User]
   implicit val updateEncoder: Encoder[Update] = deriveEncoder[Update]
 
   // Inline
-  implicit val chosenInlineResultEncoder: Encoder[ChosenInlineResult] = deriveEncoder[ChosenInlineResult]
-  implicit val inlineQueryEncoder: Encoder[InlineQuery] = deriveEncoder[InlineQuery]
+//  implicit val chosenInlineResultEncoder: Encoder[ChosenInlineResult] = deriveEncoder[ChosenInlineResult]
+//  implicit val inlineQueryEncoder: Encoder[InlineQuery] = deriveEncoder[InlineQuery]
 
   // Methods
-  implicit val sendMessageJsonEncoder: Encoder[SendMessage] = deriveEncoder[SendMessage]
-  implicit val getUpdatesJsonEncoder: Encoder[GetUpdates] = deriveEncoder[GetUpdates]
-  implicit val sendLocationEncoder: Encoder[SendLocation] = deriveEncoder[SendLocation]
+//  implicit val sendMessageJsonEncoder: Encoder[SendMessage] = deriveEncoder[SendMessage]
+//  implicit val getUpdatesJsonEncoder: Encoder[GetUpdates] = deriveEncoder[GetUpdates]
+//  implicit val sendLocationEncoder: Encoder[SendLocation] = deriveEncoder[SendLocation]
 
   // Models Dal
   implicit val pageInfoEncoder: Encoder[PageInfo] = deriveEncoder[PageInfo]

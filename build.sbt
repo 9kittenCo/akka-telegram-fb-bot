@@ -1,6 +1,6 @@
 name := "telegtam-bot"
 
-version := "0.1.1"
+version := "0.1.2"
 
 scalaVersion := "2.12.3"
 
@@ -47,7 +47,7 @@ libraryDependencies ++= {
 resolvers += "Typesafe" at "https://repo.typesafe.com/typesafe/releases/"
 resolvers += Resolver.bintrayRepo("hseeberger", "maven")
 
-fork in run := true
+//fork in run := true
 
 val compilerOptions = Seq(
   "-deprecation",

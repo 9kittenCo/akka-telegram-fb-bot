@@ -1,31 +1,16 @@
 package api
 
-import java.sql.Timestamp
-
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import client.CityClient._
 import client.FacebookClient._
 import client._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Decoder.Result
-import io.circe.{Decoder, Json}
-import io.circe._
-import io.circe.generic.extras.auto._
 import io.circe.syntax._
-import model.{CirceDecoders, CirceEncoders}
 import model.dal._
+import model.{CirceDecoders, CirceEncoders}
 
 trait PagesApi extends BaseClient with FailFastCirceSupport with CirceDecoders with CirceEncoders {
-
-  implicit val TimestampFormat: Encoder[Timestamp] with Decoder[Timestamp] =
-    new Encoder[Timestamp] with Decoder[Timestamp] {
-      override def apply(a: Timestamp): Json =
-        Encoder.encodeLong.apply(a.getTime)
-
-      override def apply(c: HCursor): Result[Timestamp] =
-        Decoder.decodeLong.map(s => new Timestamp(s)).apply(c)
-    }
 
   val coworkingsRoute: Route =
     (path("coworkings") & get) {

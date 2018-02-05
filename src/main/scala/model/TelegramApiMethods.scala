@@ -7,7 +7,7 @@ case class SendMessage(
                         parseMode             : Option[String] = None,
                         disableWebPagePreview : Option[Boolean] = None,
                         disableNotification   : Option[Boolean] = None,
-                        replyToMessageId      : Option[Int] = None
+                        replyToMessageId      : Option[Long] = None
                       )
 
 case class SendLocation(

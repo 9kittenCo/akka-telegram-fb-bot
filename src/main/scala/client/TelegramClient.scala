@@ -10,14 +10,9 @@ import service.Config
 
 import scala.concurrent.Future
 
-object TelegramClient extends BaseClient with Config with CirceDecoders {
+object TelegramClient extends BaseClient with Config with CirceDecoders with CirceEncoders {
 
-  case class ParsedUserMessage(userId: String,
-                               name: String,
-                               ulr: String,
-                               longitude: Float,
-                               latitude: Float,
-                               distance: Distance_km)
+  case class ParsedUserMessage(userId: String, name: String, ulr: String, longitude: Float, latitude: Float, distance: Distance_km)
 
   //val msgsF: Future[Seq[Update]] = checkUpdates()
 
@@ -38,12 +33,13 @@ object TelegramClient extends BaseClient with Config with CirceDecoders {
   //    case Failure(f) => throw new Exception(f)
   //  }
 
-  def checkUpdates(): Future[Seq[Update]] = {
-    request[TelegramResponse[Seq[Update]]](s"$telegramUrl/getUpdates") flatMap  {
-      case TelegramResponse(true, Some(result), _, _, _) => Future(result)
-      case TelegramResponse(false, _, description, Some(errorCode), parameters) => Future.successful(Seq.empty)
-      case _ => Future.failed(throw new Exception(""))
+  def checkUpdates(): Future[List[Update]] = {
+    request[TelegramResponse[List[Update]]](s"$telegramUrl/getUpdates") map {
+      case TelegramResponse(true, Some(result)) => result
+      case TelegramResponse(false, None)        => scala.collection.immutable.List.empty[Update]
+      case _                                    => scala.collection.immutable.List.empty[Update]
     }
+
   }
 
   //
@@ -77,15 +73,13 @@ object TelegramClient extends BaseClient with Config with CirceDecoders {
   //    }
   //  }
 
-  def request[T](requestUri: String)(
-    implicit decoder: Decoder[T]): Future[T] = {
+  def request[T: Manifest](requestUri: String)(implicit decoder: Decoder[T]): Future[T] = {
     val httpRequest = HttpRequest(uri = requestUri)
     val responseFuture: Future[HttpResponse] = Http().singleRequest(httpRequest)
     responseFuture flatMap { response =>
       response.status match {
         case StatusCodes.OK =>
-          Unmarshal(
-            response.entity.withContentType(ContentTypes.`application/json`))
+          Unmarshal(response.entity.withContentType(ContentTypes.`application/json`))
             .to[T]
         case _ =>
           Future.failed(new Exception(s"Invalid response: ${response.status}"))

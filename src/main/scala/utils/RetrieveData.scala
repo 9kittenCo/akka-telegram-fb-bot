@@ -20,20 +20,22 @@ object RetrieveData extends BaseClient {
       method = HttpMethods.GET,
       uri = requestUri,
       entity = HttpEntity(ContentType(MediaTypes.`application/json`), ""),
-      headers = List(Authorization(OAuth2BearerToken(fbAccessToken))))
+      headers = List(Authorization(OAuth2BearerToken(fbAccessToken)))
+    )
 
     val responseFuture: Future[HttpResponse] = Http().singleRequest(httpRequest)
     responseFuture flatMap { response =>
       response.status match {
         case StatusCodes.OK =>
           Unmarshal(response.entity.withContentType(ContentTypes.`application/json`)).to[T]
-        case StatusCodes.TooManyRequests => response.headers.find(_.name == "X-RateLimit-Reset").map(_.value.toLong * 1000) match {
-          case None => Future.failed(new Exception(s"Number of retries exceeded: ${response.status} ${response.entity}"))
-          case Some(timestamp) =>
-            delay(FiniteDuration(timestamp - new Date().getTime, TimeUnit.MILLISECONDS)) {
-              request[T](requestUri)
-            }
-        }
+        case StatusCodes.TooManyRequests =>
+          response.headers.find(_.name == "X-RateLimit-Reset").map(_.value.toLong * 1000) match {
+            case None => Future.failed(new Exception(s"Number of retries exceeded: ${response.status} ${response.entity}"))
+            case Some(timestamp) =>
+              delay(FiniteDuration(timestamp - new Date().getTime, TimeUnit.MILLISECONDS)) {
+                request[T](requestUri)
+              }
+          }
         case _ => Future.failed(new Exception(s"Invalid response: ${response.status}"))
       }
     }
@@ -48,6 +50,5 @@ object RetrieveData extends BaseClient {
 
     promise.future
   }
-
 
 }
