@@ -41,7 +41,7 @@ object RetrieveData extends BaseClient {
     }
   }
 
-  private[this] def delay[T](delay: FiniteDuration)(action: => Future[T]) = {
+  def delay[T](delay: FiniteDuration)(action: => Future[T]): Future[T] = {
     val promise = Promise[T]()
 
     system.scheduler.scheduleOnce(delay) {

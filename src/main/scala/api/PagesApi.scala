@@ -61,5 +61,8 @@ trait PagesApi extends BaseClient with FailFastCirceSupport with CirceDecoders w
 
   val telegramRoute: Route = (path("cowobot") & get) {
     complete(TelegramClient.checkUpdates().map(_.asJson))
-  }
+  } ~
+    (path("cowobot" / "process") & get) {
+        complete(TelegramClient.processMessages())
+     }
 }

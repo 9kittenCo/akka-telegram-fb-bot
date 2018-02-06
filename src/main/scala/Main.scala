@@ -10,14 +10,13 @@ import scala.io.StdIn
 
 object Main extends App with BaseClient with MigrationConfig with PagesApi with Routes {
 
- // protected def routes: Route = Routes.routes
- protected val log: LoggingAdapter = Logging(system, getClass)
+  // protected def routes: Route = Routes.routes
+  protected val log: LoggingAdapter = Logging(system, getClass)
 
   migrate()
 
   val bindingFuture: Future[Http.ServerBinding] = Http()
-    .bindAndHandle(handler = logRequestResult("log")(routes)
-      , interface = httpInterface, port = httpPort)
+    .bindAndHandle(handler = logRequestResult("log")(routes), interface = httpInterface, port = httpPort)
 
   println(s"Server online at $httpInterface:$httpPort\nPress RETURN to stop...")
   StdIn.readLine()
@@ -27,4 +26,3 @@ object Main extends App with BaseClient with MigrationConfig with PagesApi with 
     .onComplete(_ => system.terminate())
 
 }
-

@@ -6,20 +6,19 @@ sealed trait ChatType extends Product with Serializable {
 
 object ChatType {
 
-  case object Private extends ChatType {override val name: String = super.name}
-  case object Group extends ChatType {override val name: String = super.name}
-  case object Super_group extends ChatType {override val name: String = super.name}
-  case object Channel extends ChatType {override val name: String = super.name}
+  case object Private extends ChatType { override val name: String = super.name }
+  case object Group extends ChatType { override val name: String = super.name }
+  case object Super_group extends ChatType { override val name: String = super.name }
+  case object Channel extends ChatType { override val name: String = super.name }
 
   def unsafe(str: String): ChatType = str match {
-    case Private.name    => Private
-    case Group.name      => Group
+    case Private.name     => Private
+    case Group.name       => Group
     case Super_group.name => Super_group
-    case Channel.name    => Channel
+    case Channel.name     => Channel
 //    case _               => sys.error(s"Unexpected call: $str")
   }
 }
-
 
 //case class Audio(id: String,
 //                 duration: Int,
@@ -37,7 +36,7 @@ case class Location(longitude: Float, latitude: Float)
 //                               retryAfter: Option[Int] = None
 //                             )
 
-case class TelegramResponse[T](ok: Boolean, result: Option[T])
+case class TelegramResponse[T](ok: Boolean, result: Option[T], description: Option[String] = None, error_code: Option[Int] = None)
 
 //case class Document(id: String, thumb: PhotoSize, fileName: String, mimeType: String, fileSize: String)
 
@@ -94,7 +93,7 @@ case class Update(
 
 case class Chat(
     id: Int,
- //                `type`: ChatType,
+    //                `type`: ChatType,
     `type`: String,
     title: Option[String] = None,
     username: Option[String] = None,

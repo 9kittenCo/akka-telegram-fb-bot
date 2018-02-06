@@ -20,24 +20,10 @@ trait CirceDecoders {
   // Models
   implicit val dateDecoder: Decoder[Date] = Decoder[Long].map(d => new Date(d))
   implicit val durationDecoder: Decoder[Duration] = Decoder[Int].map(d => Duration.ofSeconds(d.toLong))
-
   implicit val locationDecoder: Decoder[Location] = deriveDecoder[Location]
-
   implicit val userDecoder: Decoder[User] = deriveDecoder[User]
-//  implicit val chatTypeDecoder: Decoder[ChatType] = Decoder[String].map(a => ChatType.unsafe(a))
-//  implicit val chatTypeDecoder: Decoder[ChatType] = Decoder[ChatType]//.map(a => a.toString)
   implicit val chatDecoder: Decoder[Chat] = deriveDecoder[Chat]
-//  implicit val chatPhotoDecoder: Decoder[ChatPhoto] = deriveDecoder[ChatPhoto]
-//  implicit val photoSizeDecoder: Decoder[PhotoSize] = deriveDecoder[PhotoSize]
   implicit val messageDecoder: Decoder[Message] = deriveDecoder[Message]
-  //  implicit val callbackQueryDecoder: Decoder[CallbackQuery] = deriveDecoder[CallbackQuery]
-
-  //  // Inline
-  //  implicit val inlineQueryDecoder: Decoder[InlineQuery] = deriveDecoder[InlineQuery]
-  //  implicit val chosenInlineResultDecoder: Decoder[ChosenInlineResult] = deriveDecoder[ChosenInlineResult]
-
-  implicit def eitherResponseDecoder[A, B](implicit D: Decoder[A], DD: Decoder[B]): Decoder[Either[A, B]] =
-    deriveDecoder[Either[A, B]]
 
   implicit val updateDecoder: Decoder[Update] = deriveDecoder[Update]
 

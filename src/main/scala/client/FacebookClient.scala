@@ -33,39 +33,36 @@ object FacebookClient extends BaseClient with Config {
 
   def updatePage(pageInfo: PageInfo): Future[Long] = {
     val loc: PageLocation = pageInfo.location.get
-    PagesDal.create(Page(pageInfo.id,
-      pageInfo.name,
-      pageInfo.phone,
-      loc.city,
-      loc.country,
-      pageInfo.price_range,
-      loc.longitude.get,
-      loc.latitude.get,
-      loc.street,
-      loc.zip,
-      new Timestamp(new Date().getTime)))
+    PagesDal.create(
+      Page(
+        pageInfo.id, pageInfo.name, pageInfo.phone, loc.city, loc.country, pageInfo.price_range,
+        loc.longitude.get, loc.latitude.get, loc.street, loc.zip, new Timestamp(new Date().getTime)
+      ))
   }
 
   def transformToPage(pageInfo: PageInfo): Future[Page] = {
     val loc: Option[PageLocation] = pageInfo.location
-    Future(Page(pageInfo.id,
-      pageInfo.name,
-      pageInfo.phone,
-      loc.get.city,
-      loc.get.country,
-      pageInfo.price_range,
-      loc.get.latitude.getOrElse(0f),
-      loc.get.longitude.getOrElse(0f),
-      loc.get.street,
-      loc.get.zip,
-      new Timestamp(new Date().getTime)))
+    Future(
+      Page(
+        pageInfo.id,
+        pageInfo.name,
+        pageInfo.phone,
+        loc.get.city,
+        loc.get.country,
+        pageInfo.price_range,
+        loc.get.latitude.getOrElse(0f),
+        loc.get.longitude.getOrElse(0f),
+        loc.get.street,
+        loc.get.zip,
+        new Timestamp(new Date().getTime)
+      ))
   }
 
   def findPagesByCity(city: String): Future[Seq[SearchPagesInfo]] = {
     val response = RetrieveData.request[Response[SearchPagesInfo]](s"$fbServiceUrl/search?q=coworking+$city&type=page")
     response flatMap { p =>
       p.paging.get.next match {
-        case None => Future(p.data)
+        case None      => Future(p.data)
         case Some(nxt) => fetch(nxt, Future(p.data))
       }
     }
@@ -84,7 +81,7 @@ object FacebookClient extends BaseClient with Config {
     } map { n_pages =>
       n_pages.flatten.map { n_page: Page =>
         PageDistance(n_page, getDistance(latitude, longitude, n_page.latitude, n_page.longitude))
-      } sortBy (_.distance_km)
+      } sortBy (_.distanceKm)
     } map (data => data.take(3))
   }
 

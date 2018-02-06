@@ -1,89 +1,94 @@
 package client
 
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.client._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import helpers.Distance_km
-import io.circe._
+import cats.implicits._
+import client.FacebookClient._
+import helpers.{DistanceKm, MessageId}
+import io.circe.syntax._
+import io.circe.{Decoder, Json}
 import model._
 import service.Config
 
 import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 object TelegramClient extends BaseClient with Config with CirceDecoders with CirceEncoders {
 
-  case class ParsedUserMessage(userId: String, name: String, ulr: String, longitude: Float, latitude: Float, distance: Distance_km)
+  case class ParsedUserMessage(userId: Int, messageId: Int, name: String, url: String, longitude: Float, latitude: Float, distance: DistanceKm)
 
-  //val msgsF: Future[Seq[Update]] = checkUpdates()
+  def getUserMessages: Future[List[(User, MessageId, Location)]] = {
+    checkUpdates() map { updates =>
+      updates.filter(_.message.isDefined) map { update =>
+        val mssg = update.message.get
+        (mssg.from.get, mssg.message_id, mssg.location)
+      } filter (_._3.isDefined) map { usrloc =>
+        (usrloc._1, usrloc._2, usrloc._3.get)
+      }
+    }
+  }
 
-  //  lazy val usrmsges: Future[Seq[(User,Location)]] = for {
-  //    msgs: List[Update] <- msgsF
-  //    msg <- msgs.filter(_.message.isDefined).flatMap(_.message)
-  //    user = msg.from
-  //    loc = msg.location
-  //  } yield (user.get, loc.get)
+  def processMessages(): Unit = {
+    val usr_msgsF = parseUserMessages(getUserMessages)
 
-  //  lazy val usr_msgsF: Future[Seq[ParsedUserMessage]] = processMessages(usrmsges)
-  //
-  //  usr_msgsF.onComplete {
-  //    case Success(usr_msgs) => usr_msgs.foreach { usr_msg =>
-  //      sendMessage(SendMessage(usr_msg.userId, s"${usr_msg.name} - ${usr_msg.distance} km. \n ${usr_msg.ulr}").asJson, "sendMessage")
-  //      sendMessage(SendLocation(usr_msg.userId, usr_msg.latitude, usr_msg.longitude).asJson, "sendLocation")
-  //    }
-  //    case Failure(f) => throw new Exception(f)
-  //  }
+    usr_msgsF.onComplete {
+      case Success(usr_msgs) =>
+        usr_msgs.sortBy(_.distance).foreach { usr_msg =>
+          val text = s"${usr_msg.name} - ${usr_msg.distance} m. \n ${usr_msg.url}"
+          sendMessage[Message](SendMessage(usr_msg.userId, text, Some("Markdown"), Some(false), None, Some(usr_msg.messageId.toLong)).asJson, "sendMessage")
+          Thread.sleep(500)
+          sendMessage[Message](SendLocation(usr_msg.userId, usr_msg.longitude, usr_msg.latitude, None, Some(usr_msg.messageId.toLong)).asJson, "sendLocation")
+          //for right order
+          Thread.sleep(500)
+
+        }
+      case Failure(f) => throw new Exception(f)
+    }
+  }
 
   def checkUpdates(): Future[List[Update]] = {
-    request[TelegramResponse[List[Update]]](s"$telegramUrl/getUpdates") map {
-      case TelegramResponse(true, Some(result)) => result
-      case TelegramResponse(false, None)        => scala.collection.immutable.List.empty[Update]
-      case _                                    => scala.collection.immutable.List.empty[Update]
+    sendMessage[TelegramResponse[List[Update]]](GetUpdates(Some(1)).asJson, "getUpdates") map {
+      case TelegramResponse(true, Some(result), _, _) => result
+      case TelegramResponse(false, None, _, _)        => scala.collection.immutable.List.empty[Update]
+      case _                                          => scala.collection.immutable.List.empty[Update]
     }
 
   }
 
-  //
-  //  def processMessages(messagesF: Future[Seq[(User, Location)]])
-  //  : Future[Seq[ParsedUserMessage]] = {
-  //    for {
-  //      msgs <- messagesF
-  //      msg: (User, Location) <- msgs
-  //      pglocs: Seq[PageDistance] <- getPagesByLocation(msg._2.latitude,
-  //        msg._2.longitude)
-  //      pgloc: PageDistance <- pglocs
-  //    } yield {
-  //      ParsedUserMessage(msg._1.id.toString,
-  //        pgloc.page.name,
-  //        s"https://facebook/$pgloc.page.fb_id)",
-  //        pgloc.page.latitude,
-  //        pgloc.page.longitude,
-  //        pgloc.distance_km)
-  //    }
-  //  }
-  //
-  //  def sendMessage(message: Json, method: String): Future[Message] = {
-  //
-  //    val uri = s"$telegramUrl/$method"
-  //    val body = RequestBuilding.Post(Uri(uri), content = message)
-  //    for {
-  //      response <- Http().singleRequest(body)
-  //      decoded <- Unmarshal(response.entity).to[Message]
-  //    } yield {
-  //      decoded
-  //    }
-  //  }
-
-  def request[T: Manifest](requestUri: String)(implicit decoder: Decoder[T]): Future[T] = {
-    val httpRequest = HttpRequest(uri = requestUri)
-    val responseFuture: Future[HttpResponse] = Http().singleRequest(httpRequest)
-    responseFuture flatMap { response =>
-      response.status match {
-        case StatusCodes.OK =>
-          Unmarshal(response.entity.withContentType(ContentTypes.`application/json`))
-            .to[T]
-        case _ =>
-          Future.failed(new Exception(s"Invalid response: ${response.status}"))
+  def parseUserMessages(messagesF: Future[List[(User, MessageId, Location)]]): Future[List[ParsedUserMessage]] = {
+    val pglocsF = messagesF flatMap { msgs =>
+      Future.sequence {
+        msgs map { msg =>
+          getPagesByLocation(msg._3.latitude, msg._3.longitude) map { ms =>
+            (msg._1, msg._2, ms)
+          }
+        }
       }
+    }
+
+    val parsedUserMessagesF = pglocsF map { tupls =>
+      tupls
+        .flatMap { upls =>
+          upls._3.map { pgloc =>
+            val url = s"https://facebook.com/${pgloc.page.fb_id}"
+            ParsedUserMessage(upls._1.id, upls._2, pgloc.page.name, url, pgloc.page.latitude, pgloc.page.longitude, pgloc.distanceKm)
+          }
+        }
+    }
+    parsedUserMessagesF
+  }
+
+  def sendMessage[T: Manifest](message: Json, method: String)(implicit decoder: Decoder[T]): Future[T] = {
+
+    val uri = s"$telegramUrl/$method"
+    val body = RequestBuilding.Post(Uri(uri), content = message)
+    for {
+      response <- Http().singleRequest(body)
+      decoded <- Unmarshal(response.entity).to[T]
+    } yield {
+      decoded
     }
   }
 }

@@ -1,6 +1,6 @@
 package utils
 
-import helpers.Distance_km
+import helpers.DistanceKm
 
 object DistanceCalculation {
   //** The Earth's radius, in meters. *///** The Earth's radius, in meters. */
@@ -16,7 +16,7 @@ object DistanceCalculation {
     * @param longitude2 the longitude of the second point
     * @return the distance, in kilometers, between the two points
     */
-  def getDistance(latitude1: Float, longitude1: Float, latitude2: Float, longitude2: Float): Distance_km = {
+  def getDistance(latitude1: Float, longitude1: Float, latitude2: Float, longitude2: Float): DistanceKm = {
     val dLat = Math.toRadians(latitude2 - latitude1)
     val dLon = Math.toRadians(longitude2 - longitude1)
     val lat1 = Math.toRadians(latitude1)
