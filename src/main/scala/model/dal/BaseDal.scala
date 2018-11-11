@@ -1,14 +1,14 @@
 package model.dal
 
 import model.db.{CityTable, PagesTable}
-import service.DatabaseConfig
+import service.SlickDatabaseConfig
 import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.lifted.TableQuery
 import slick.sql.{FixedSqlStreamingAction, SqlAction}
 
 import scala.concurrent.Future
 
-trait BaseDal extends DatabaseConfig {
+trait BaseDal extends SlickDatabaseConfig {
   lazy val pagesTable: TableQuery[PagesTable] = TableQuery[PagesTable]
   lazy val citiesTable: TableQuery[CityTable] = TableQuery[CityTable]
 

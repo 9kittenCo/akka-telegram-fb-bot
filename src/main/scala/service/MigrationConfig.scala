@@ -2,7 +2,7 @@ package service
 
 import org.flywaydb.core.Flyway
 
-trait MigrationConfig extends Config {
+object MigrationConfig extends Config {
 
   private val flyway = new Flyway()
   flyway.setDataSource(databaseUrl, databaseUser, databasePassword)

@@ -1,3 +1,4 @@
+/*
 package model
 
 import java.sql.Timestamp
@@ -7,6 +8,7 @@ import java.util.Date
 import io.circe.Decoder.Result
 import io.circe._
 import io.circe.generic.semiauto._
+import model.TelegramApiModels._
 import model.dal.{City, Page}
 
 trait CirceDecoders {
@@ -23,11 +25,11 @@ trait CirceDecoders {
   implicit val locationDecoder: Decoder[Location] = deriveDecoder[Location]
   implicit val userDecoder: Decoder[User] = deriveDecoder[User]
   implicit val chatDecoder: Decoder[Chat] = deriveDecoder[Chat]
-  implicit val messageDecoder: Decoder[Message] = deriveDecoder[Message]
+  implicit val messageDecoder: Decoder[TgMessage] = deriveDecoder[TgMessage]
 
   implicit val updateDecoder: Decoder[Update] = deriveDecoder[Update]
 
-  implicit def telegramResponseDecoder[T](implicit D: Decoder[T]): Decoder[TelegramResponse[T]] = deriveDecoder[TelegramResponse[T]]
+//  implicit def telegramResponseDecoder[T](implicit D: Decoder[T]): Decoder[TelegramResponse[T]] = deriveDecoder[TelegramResponse[T]]
 
   // Models Dal
   implicit val pageInfoDecoder: Decoder[PageInfo] = deriveDecoder[PageInfo]
@@ -38,3 +40,4 @@ trait CirceDecoders {
   implicit val pageDistanceDecoder: Decoder[PageDistance] = deriveDecoder[PageDistance]
 
 }
+*/

@@ -1,145 +1,128 @@
 package model
 
-sealed trait ChatType extends Product with Serializable {
-  def name: String = this.productPrefix
+import helpers.Id
+import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
+
+object TelegramApiModels {
+
+  implicit val customConfig: Configuration = Configuration.default.withSnakeCaseMemberNames
+
+  //  @ConfiguredJsonCodec
+  case class TelegramResponse[T](ok: Boolean, result: T)
+
+
+  @ConfiguredJsonCodec
+  case class Update(updateId: Id,
+                    message: Option[TgMessage] = None,
+                    editedMessage: Option[TgMessage] = None,
+                    channelPost: Option[TgMessage] = None,
+                    editedChannelPost: Option[TgMessage] = None,
+                    inlineQuery: Option[InlineQuery] = None)
+
+  @ConfiguredJsonCodec
+  case class InlineQuery(id: String,
+                         from: User,
+                         location: Option[Location],
+                         query: String,
+                         offset: String)
+
+  @ConfiguredJsonCodec
+  case class Location(longitude: Float, latitude: Float)
+
+  @ConfiguredJsonCodec
+  case class User(id: Id,
+                  isBot: Boolean,
+                  firstName: String,
+                  lastName: Option[String],
+                  username: Option[String],
+                  languageCode: Option[String])
+
+
+  @ConfiguredJsonCodec
+  case class ChatPhoto(smallFileId: String, bigFileId: String)
+
+  @ConfiguredJsonCodec
+  case class Chat(id: Id,
+                  @JsonKey("type")
+                  `type`: String,
+                  title: Option[String] = None,
+                  username: Option[String] = None,
+                  firstName: Option[String] = None,
+                  lastName: Option[String] = None,
+                  allMembersAreAdministrators: Option[String] = None,
+                  photo: Option[ChatPhoto] = None,
+                  description: Option[String] = None,
+                  inviteLink: Option[String] = None,
+                  pinnedMessage: Option[TgMessage] = None,
+                  stickerSetName: Option[String] = None,
+                  canSetStickerSet: Option[String] = None)
+
+  @ConfiguredJsonCodec
+  case class MessageEntity(`type`: String,
+                           offset: Int,
+                           length: Int,
+                           url: Option[String],
+                           user: Option[User])
+
+  @ConfiguredJsonCodec
+  case class Audio(fileId: String,
+                   duration: Int,
+                   performer: Option[String],
+                   title: Option[String],
+                   mimeType: Option[String],
+                   fileSize: Option[Int])
+
+  @ConfiguredJsonCodec
+  case class TgMessage(
+                        messageId: Id,
+                        date: Long,
+                        chat: Chat,
+                        from: Option[User] = None,
+                        forwardFrom: Option[User] = None,
+                        forwardFromChat: Option[Chat] = None,
+                        forwardFromMessageId: Option[Id] = None,
+                        forwardSignature: Option[String] = None,
+                        forwardDate: Option[Int] = None,
+                        replyToMessage: Option[TgMessage] = None,
+                        editDate: Option[Int] = None,
+                        mediaGroupId: Option[String] = None,
+                        authorSignature: Option[String] = None,
+                        text: Option[String] = None,
+                        entities: Option[Array[MessageEntity]] = None,
+                        captionEntities: Option[Array[MessageEntity]] = None,
+                        location: Option[Location] = None
+                      )
+
+  @ConfiguredJsonCodec
+  case class Webhook(url: String,
+                     maxConnections: Option[Int] = None,
+                     allowedUpdates: Option[Array[String]] = None)
+
+  @ConfiguredJsonCodec
+  case class SendLocation(
+                           chatId: Id,
+                           latitude: Double,
+                           longitude: Double,
+                           disableNotification: Option[Boolean] = None,
+                           replyToMessageId: Option[Long] = None
+                         )
+
+  @ConfiguredJsonCodec
+  case class SendMessage(
+                          chatId: Id,
+                          text: String,
+                          parseMode: Option[String] = None,
+                          disableWebPagePreview: Option[Boolean] = None,
+                          disableNotification: Option[Boolean] = None,
+                          replyToMessageId: Option[Long] = None
+                        )
+
+  @ConfiguredJsonCodec
+  case class GetUpdates(
+                         offset: Option[Long] = None,
+                         limit: Option[Int] = Some(100),
+                         timeout: Option[Int] = Some(0),
+                         allowed_updates: Option[List[String]] = None
+                       )
+
 }
-
-object ChatType {
-
-  case object Private extends ChatType { override val name: String = super.name }
-  case object Group extends ChatType { override val name: String = super.name }
-  case object Super_group extends ChatType { override val name: String = super.name }
-  case object Channel extends ChatType { override val name: String = super.name }
-
-  def unsafe(str: String): ChatType = str match {
-    case Private.name     => Private
-    case Group.name       => Group
-    case Super_group.name => Super_group
-    case Channel.name     => Channel
-//    case _               => sys.error(s"Unexpected call: $str")
-  }
-}
-
-//case class Audio(id: String,
-//                 duration: Int,
-//                 performer: Option[String],
-//                 title: Option[String],
-//                 mimeType: Option[String],
-//                 fileSize: Option[Int])
-
-case class Location(longitude: Float, latitude: Float)
-
-//case class Venue(location: Location, title: String, address: String, foursquareId: String)
-
-//case class ResponseParameters(
-//                               migrateToChatId: Option[Long] = None,
-//                               retryAfter: Option[Int] = None
-//                             )
-
-case class TelegramResponse[T](ok: Boolean, result: Option[T], description: Option[String] = None, error_code: Option[Int] = None)
-
-//case class Document(id: String, thumb: PhotoSize, fileName: String, mimeType: String, fileSize: String)
-
-//case class PhotoSize(fileId: String, width: Int, height: Int, fileSize: Option[Int])
-
-//case class ChatPhoto(
-//                      smallFileId: String,
-//                      bigFileId: String
-//                    )
-
-//case class PhotoSize(id: String, width: Int, height: Int, fileSize: Option[Int])
-
-//case class Sticker(id: String, width: Int, height: Int, thumb: Option[PhotoSize], fileSize: Option[Int])
-
-//case class Video(id: String, width: Int, height: Int, duration: Int, thumb: Option[PhotoSize], mimeType: Option[String], fileSize: Option[Int])
-
-//case class Voice(id: String, duration: Int, mimeType: Option[String], fileSize: Option[Int])
-
-//case class Contact(phoneNumber: String, firstName: String, lastName: Option[String], userId: Option[Int])
-
-//case class InlineQuery(
-//                        id: String,
-//                        from: User,
-//                        location: Option[Location] = None,
-//                        query: String,
-//                        offset: String
-//                      )
-//
-//case class ChosenInlineResult(
-//                               resultId: String,
-//                               from: User,
-//                               location: Option[Location] = None,
-//                               inlineMessageId: Option[String] = None,
-//                               query: String
-//                             )
-
-//case class CallbackQuery(
-//                          id: String,
-//                          from: User,
-//                          message: Option[Message] = None,
-//                          inlineMessageId: Option[String] = None,
-//                          chatInstance: String,
-//                          data: Option[String] = None,
-//                          gameShortName: Option[String] = None
-//                        )
-
-case class Update(
-    update_id: Int,
-    message: Option[Message] = None
-//                   inlineQuery: Option[InlineQuery] = None,
-//                   chosenInlineResult: Option[ChosenInlineResult] = None
-    //callbackQuery: Option[CallbackQuery] = None
-)
-
-case class Chat(
-    id: Int,
-    //                `type`: ChatType,
-    `type`: String,
-    title: Option[String] = None,
-    username: Option[String] = None,
-    first_name: Option[String] = None,
-    last_name: Option[String] = None,
-//                 allMembersAreAdministrators: Option[Boolean] = None,
-//                 photo: Option[ChatPhoto] = None,
-    description: Option[String] = None
-//                 inviteLink: Option[String] = None,
-//                 pinnedMessage: Option[Message] = None,
-//                 stickerSetName: Option[String] = None,
-//                 canSetStickerSet: Option[Boolean] = None
-)
-
-//case class GroupChat(
-//                      id: String,
-//                      title: String)
-
-case class User(id: Int, is_bot: Boolean, first_name: String, last_name: Option[String], username: Option[String], language_code: Option[String])
-
-case class Message(
-    message_id: Int,
-    from: Option[User] = None,
-    date: Int,
-    chat: Chat,
-    forward_from: Option[User] = None,
-    reply_to: Option[Message] = None,
-    text: Option[String] = None,
-    //                    audio: Option[Audio] = None,
-    //                    document: Option[Document] = None,
-    //                    photo: Option[List[PhotoSize]] = None,
-    //                    sticker: Option[Sticker] = None,
-    //                   video: Option[Video] = None,
-    //                   voice: Option[Voice] = None,
-    caption: Option[String] = None,
-    //                    contact: Option[Contact] = None,
-    location: Option[Location] = None)
-//                    newChatParticipant: Option[User] = None,
-//                    leftChatParticipant: Option[User] = None,
-//                    newChatTitle: Option[String] = None,
-//                    newChatPhoto: Option[List[PhotoSize]] = None,
-//                    deleteChatPhoto: Option[Boolean] = None)
-//case class WebhookInfo(
-//                        url: String,
-//                        hasCustomCertificate: Boolean,
-//                        pendingUpdateCount: Int,
-//                        lastErrorDate: Option[Int] = None,
-//                        lastErrorMessage: Option[String] = None
-//                      )

@@ -1,28 +1,44 @@
-import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.Directives._
-import api.PagesApi
-import client.BaseClient
-import service.MigrationConfig
+import api.TelegramApiService
+import bot.{Command, CowobotService, EventSourceImpl, ProcessedMessage}
+import cats.effect._
+import client.{CityClient, FacebookClient}
+import fs2.{Stream, StreamApp}
+import fs2.StreamApp.ExitCode
+import org.http4s.client.blaze.Http1Client
+import service.DoobieDatabaseConfig
+import cats.implicits._
+import model.dao.DoobieCityAlgebra
 
-import scala.concurrent.Future
-import scala.io.StdIn
+object Main extends StreamApp[IO] {
 
-object Main extends App with BaseClient with MigrationConfig with PagesApi with Routes {
-
-  // protected def routes: Route = Routes.routes
-  protected val log: LoggingAdapter = Logging(system, getClass)
-
+  import service.MigrationConfig._
   migrate()
 
-  val bindingFuture: Future[Http.ServerBinding] = Http()
-    .bindAndHandle(handler = logRequestResult("log")(routes), interface = httpInterface, port = httpPort)
+  override def stream(args: List[String], shutdown: IO[Unit]): Stream[IO, ExitCode] = createStream[IO](args, shutdown)
 
-  println(s"Server online at $httpInterface:$httpPort\nPress RETURN to stop...")
-  StdIn.readLine()
-
-  bindingFuture
-    .flatMap(_.unbind())
-    .onComplete(_ => system.terminate())
-
+  def createStream[F[_]](args: List[String], shutdown: F[Unit])(
+    implicit E: Effect[F]): Stream[F, ExitCode] =
+    for {
+      client    <- Http1Client.stream()
+      dbConfig   = new DoobieDatabaseConfig[F]
+      dbAlgebra  = new DoobieCityAlgebra[F](dbConfig.xa)
+      citiesF      = dbAlgebra.findAll()
+      cities    <- Stream.eval(citiesF)
+      apiC       = new CityClient[F](dbAlgebra, cities)
+      apiT       = new TelegramApiService[F](client)
+      apiF       = new FacebookClient[F](apiC, dbAlgebra)
+      cowobot    = new CowobotService[F](apiT, apiF)
+      eventSource = EventSourceImpl(apiT)
+      _ <- eventSource.events().map(Command.process).collect {
+        case Some(command) => command match {
+          case processedMessage@ProcessedMessage(_, _, _, _) =>
+            for {
+              pums <- cowobot.parseUserMessage(E.delay(processedMessage))
+              pum  <- pums
+              _     = apiT.sendMessage(pum.userId, s"${pum.name} - ${pum.distance} m. \n ${pum.url}")
+              _     = apiT.sendLocation(pum.userId, pum.latitude, pum.longitude)
+            } yield ()
+        }
+      }.evalMap(v => v).last
+    } yield ExitCode.Success
 }

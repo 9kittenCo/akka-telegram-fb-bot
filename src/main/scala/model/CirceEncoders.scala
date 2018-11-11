@@ -1,3 +1,4 @@
+/*
 package model
 
 import java.sql.Timestamp
@@ -20,26 +21,26 @@ trait CirceEncoders {
   implicit val customConfig: Configuration = Configuration.default.withSnakeCaseMemberNames.withDefaults
 
   // Models
-  implicit val dateEncoder: Encoder[Date] = Encoder[Long].contramap[Date](d ⇒ d.getTime)
+  implicit val dateEncoder: Encoder[Date]         = Encoder[Long].contramap[Date](d ⇒ d.getTime)
   implicit val durationEncoder: Encoder[Duration] = Encoder[Int].contramap[Duration](d ⇒ d.getSeconds.toInt)
 
-  implicit val chatEncoder: Encoder[Chat] = deriveEncoder[Chat]
+  implicit val chatEncoder: Encoder[Chat]         = deriveEncoder[Chat]
   implicit val locationEncoder: Encoder[Location] = deriveEncoder[Location]
-  implicit val messageEncoder: Encoder[Message] = deriveEncoder[Message]
+  implicit val messageEncoder: Encoder[TgMessage] = deriveEncoder[TgMessage]
 
-  implicit val userEncoder: Encoder[User] = deriveEncoder[User]
-  implicit val updateEncoder: Encoder[Update] = deriveEncoder[Update]
+  implicit val userEncoder: Encoder[User]         = deriveEncoder[User]
+  implicit val updateEncoder: Encoder[Update]     = deriveEncoder[Update]
 
   // Methods
   implicit val sendMessageJsonEncoder: Encoder[SendMessage] = deriveEncoder[SendMessage]
-  implicit val getUpdatesJsonEncoder: Encoder[GetUpdates] = deriveEncoder[GetUpdates]
-  implicit val sendLocationEncoder: Encoder[SendLocation] = deriveEncoder[SendLocation]
+  implicit val getUpdatesJsonEncoder: Encoder[GetUpdates]   = deriveEncoder[GetUpdates]
+  implicit val sendLocationEncoder: Encoder[SendLocation]   = deriveEncoder[SendLocation]
 
   // Models Dal
-  implicit val pageInfoEncoder: Encoder[PageInfo] = deriveEncoder[PageInfo]
+  implicit val pageInfoEncoder: Encoder[PageInfo]         = deriveEncoder[PageInfo]
   implicit val pageLocationEncoder: Encoder[PageLocation] = deriveEncoder[PageLocation]
-  implicit val cityEncoder: Encoder[City] = deriveEncoder[City]
-  implicit val pageEncoder: Encoder[Page] = deriveEncoder[Page]
+  implicit val cityEncoder: Encoder[City]                 = deriveEncoder[City]
+  implicit val pageEncoder: Encoder[Page]                 = deriveEncoder[Page]
 
   implicit val pageDistanceEncoder: Encoder[PageDistance] = deriveEncoder[PageDistance]
-}
+}*/

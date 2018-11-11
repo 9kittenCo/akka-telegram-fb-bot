@@ -1,6 +1,6 @@
 package service
 
-trait DatabaseConfig extends Config {
+trait SlickDatabaseConfig extends Config {
   val driver = slick.jdbc.PostgresProfile
 
   import driver.api._
